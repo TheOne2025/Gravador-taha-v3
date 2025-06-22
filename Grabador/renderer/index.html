@@ -1958,6 +1958,10 @@ html, body {
             toggleSidebarScroll();
         }
 
+        window.startCapture = startCapture;
+        window.stopCapture = stopCapture;
+        window.addActivityEntry = addActivityEntry;
+
         document.addEventListener('DOMContentLoaded', () => {
             handleContentScrollState();
             handleSidebarScrollState();

@@ -1478,28 +1478,28 @@ html, body {
                                             <div class="setting-label">Grabar movimientos del mouse</div>
                                             <div class="setting-description">Captura todos los movimientos del cursor</div>
                                         </div>
-                                        <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                                        <div class="toggle-switch active" data-option="mouseMove" onclick="toggleSwitch(this)"></div>
                                     </div>
                                     <div class="setting-item">
                                         <div class="setting-info">
                                             <div class="setting-label">Grabar clicks del mouse</div>
                                             <div class="setting-description">Registra clicks izquierdo, derecho y medio</div>
                                         </div>
-                                        <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                                        <div class="toggle-switch active" data-option="mouseClick" onclick="toggleSwitch(this)"></div>
                                     </div>
                                     <div class="setting-item">
                                         <div class="setting-info">
                                             <div class="setting-label">Grabar entrada de teclado</div>
                                             <div class="setting-description">Captura todas las teclas presionadas</div>
                                         </div>
-                                        <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                                        <div class="toggle-switch active" data-option="keyboard" onclick="toggleSwitch(this)"></div>
                                     </div>
                                     <div class="setting-item">
                                         <div class="setting-info">
                                             <div class="setting-label">Captura inteligente</div>
                                             <div class="setting-description">Optimiza la grabación eliminando acciones redundantes</div>
                                         </div>
-                                        <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
+                                        <div class="toggle-switch" data-option="smartCapture" onclick="toggleSwitch(this)"></div>
                                     </div>
                                 </div>
                             </div>
@@ -1521,14 +1521,14 @@ html, body {
                                             <div class="setting-label">Velocidad de captura</div>
                                             <div class="setting-description">FPS para la grabación</div>
                                         </div>
-                                        <input type="number" class="custom-input" value="60" min="1" max="144">
+                                        <input type="number" class="custom-input" data-option="fps" value="60" min="1" max="144">
                                     </div>
                                     <div class="setting-item">
                                         <div class="setting-info">
                                             <div class="setting-label">Calidad de compresión</div>
                                             <div class="setting-description">Balance entre tamaño y precisión</div>
                                         </div>
-                                        <select class="custom-select">
+                                        <select class="custom-select" data-option="compression">
                                             <option>Baja</option>
                                             <option selected>Media</option>
                                             <option>Alta</option>
@@ -1540,14 +1540,14 @@ html, body {
                                             <div class="setting-label">Hotkey de grabación</div>
                                             <div class="setting-description">Atajo para iniciar/detener</div>
                                         </div>
-                                        <input type="text" class="custom-input" value="F9" readonly style="width: 60px;">
+                                        <input type="text" class="custom-input" data-option="hotkey" value="F9" readonly style="width: 60px;">
                                     </div>
                                     <div class="setting-item">
                                         <div class="setting-info">
                                             <div class="setting-label">Retraso inicial</div>
                                             <div class="setting-description">Segundos antes de iniciar</div>
                                         </div>
-                                        <input type="number" class="custom-input" value="3" min="0" max="10">
+                                        <input type="number" class="custom-input" data-option="startDelay" value="3" min="0" max="10">
                                     </div>
                                 </div>
                             </div>
@@ -1745,10 +1745,47 @@ html, body {
             event.currentTarget.classList.add('active');
         }
 
+        // Opciones de grabación
+        const recordingOptions = {
+            mouseMove: true,
+            mouseClick: true,
+            keyboard: true,
+            smartCapture: false,
+            fps: 60,
+            compression: 'Media',
+            hotkey: 'F9',
+            startDelay: 3
+        };
+        window.recordingOptions = recordingOptions;
+
+        function readOptions() {
+            document.querySelectorAll('.toggle-switch[data-option]').forEach(el => {
+                const opt = el.getAttribute('data-option');
+                recordingOptions[opt] = el.classList.contains('active');
+            });
+            document.querySelectorAll('[data-option=fps]').forEach(el => {
+                recordingOptions.fps = parseInt(el.value) || 60;
+            });
+            const comp = document.querySelector('[data-option=compression]');
+            if (comp) recordingOptions.compression = comp.value;
+            const hotkey = document.querySelector('[data-option=hotkey]');
+            if (hotkey) recordingOptions.hotkey = hotkey.value;
+            const delay = document.querySelector('[data-option=startDelay]');
+            if (delay) recordingOptions.startDelay = parseInt(delay.value) || 0;
+            window.recordingOptions = recordingOptions;
+        }
+
         // Toggle switches
         function toggleSwitch(element) {
             element.classList.toggle('active');
+            readOptions();
         }
+
+        document.querySelectorAll('[data-option]').forEach(el => {
+            el.addEventListener('change', readOptions);
+        });
+
+        document.addEventListener('DOMContentLoaded', readOptions);
 
         // Funciones de ventana
         function minimizeWindow() {

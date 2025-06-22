@@ -1454,7 +1454,7 @@ html, body {
 
                             <div class="activity-container">
                                 <span class="activity-title">Actividad en Tiempo Real</span>
-                                <div class="action-log" id="actividad"></div>
+                                <div class="action-log" id="activity-log"></div>
                             </div>
                         </div>
 
@@ -1686,7 +1686,7 @@ html, body {
         // --- Registro de actividad recibido del backend ---
 
         function addActivityEntry(type, text, css) {
-            const log = document.getElementById('actividad');
+            const log = document.getElementById('activity-log');
             const entry = document.createElement('div');
             entry.className = `action-entry ${css} animate-in`;
             const time = new Date().toTimeString().split(' ')[0];

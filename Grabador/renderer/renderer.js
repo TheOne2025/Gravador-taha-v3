@@ -231,7 +231,6 @@ async function init() {
     conectarControles();
     actualizarUI();
     if (await verificarBackend()) {
-        connectWS();
         iniciarEstadoPolling();
     }
 }

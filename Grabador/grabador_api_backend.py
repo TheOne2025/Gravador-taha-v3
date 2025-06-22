@@ -62,6 +62,12 @@ eventos_queue = queue.Queue(maxsize=10000)
 ws_clients = set()
 ws_loop = asyncio.new_event_loop()
 
+def _handle_ws_future(fut, ws):
+    try:
+        fut.result()
+    except Exception:
+        ws_clients.discard(ws)
+
 async def _ws_handler(websocket):
     ws_clients.add(websocket)
     try:
@@ -83,7 +89,11 @@ def _ws_broadcast(tipo, data):
         return
     mensaje = json.dumps({"type": tipo, "data": data})
     for ws in list(ws_clients):
-        asyncio.run_coroutine_threadsafe(ws.send(mensaje), ws_loop)
+        if ws.closed:
+            ws_clients.discard(ws)
+            continue
+        fut = asyncio.run_coroutine_threadsafe(ws.send(mensaje), ws_loop)
+        fut.add_done_callback(lambda f, w=ws: _handle_ws_future(f, w))
 
 class Reproductor:
     def __init__(self, eventos, velocidad=1.0, on_finish=None):

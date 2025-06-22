@@ -62,12 +62,6 @@ eventos_queue = queue.Queue(maxsize=10000)
 ws_clients = set()
 ws_loop = None
 
-def _handle_ws_future(fut, ws):
-    try:
-        fut.result()
-    except Exception:
-        ws_clients.discard(ws)
-
 async def _ws_handler(websocket):
     ws_clients.add(websocket)
     try:
@@ -81,27 +75,25 @@ def _start_ws_server():
 
     ws_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(ws_loop)
-    server = websockets.serve(_ws_handler, "127.0.0.1", 8765)
-    ws_loop.run_until_complete(server)
+    start_server = websockets.serve(_ws_handler, "127.0.0.1", 8765)
+    ws_loop.run_until_complete(start_server)
+    print("WebSocket servidor en ws://127.0.0.1:8765")
     ws_loop.run_forever()
 
 ws_thread = threading.Thread(target=_start_ws_server, daemon=True)
 ws_thread.start()
 
-def _ws_broadcast(tipo, data):
-    if not grabando or not ws_clients or ws_loop is None:
-        return
-
-    mensaje = json.dumps({"tipo": tipo, "data": data})
+async def _ws_broadcast(msg):
+    desconectados = []
     for ws in list(ws_clients):
-        if ws.closed:
-            ws_clients.discard(ws)
-            continue
         try:
-            fut = asyncio.run_coroutine_threadsafe(ws.send(mensaje), ws_loop)
-            fut.add_done_callback(lambda f, w=ws: _handle_ws_future(f, w))
+            await ws.send(json.dumps(msg))
+        except websockets.ConnectionClosed:
+            desconectados.append(ws)
         except Exception:
-            ws_clients.discard(ws)
+            desconectados.append(ws)
+    for ws in desconectados:
+        ws_clients.discard(ws)
 
 class Reproductor:
     def __init__(self, eventos, velocidad=1.0, on_finish=None):
@@ -322,7 +314,11 @@ def iniciar_grabacion():
             try:
                 eventos_queue.put_nowait(('mouse_click', time.time() - tiempo_inicio, (x, y, button, pressed)))
                 btn_name = str(button).split('.')[-1]
-                _ws_broadcast('mouse_click', {'x': x, 'y': y, 'button': btn_name, 'pressed': pressed})
+                if ws_loop:
+                    asyncio.run_coroutine_threadsafe(
+                        _ws_broadcast({'tipo': 'mouse_click', 'data': {'x': x, 'y': y, 'button': btn_name, 'pressed': pressed}}),
+                        ws_loop
+                    )
             except queue.Full:
                 pass  # Descartar evento si la cola está llena
 
@@ -336,7 +332,11 @@ def iniciar_grabacion():
                         eventos_queue.put_nowait(('mouse_move', tiempo_actual - tiempo_inicio, actual))
                         ultima_posicion[0] = actual
                         ultimo_tiempo_move[0] = tiempo_actual
-                        _ws_broadcast('mouse_move', {'x': x, 'y': y})
+                        if ws_loop:
+                            asyncio.run_coroutine_threadsafe(
+                                _ws_broadcast({'tipo': 'mouse_move', 'data': {'x': x, 'y': y}}),
+                                ws_loop
+                            )
                     except queue.Full:
                         pass
 
@@ -344,7 +344,11 @@ def iniciar_grabacion():
         if grabando:
             try:
                 eventos_queue.put_nowait(('mouse_scroll', time.time() - tiempo_inicio, (x, y, dx, dy)))
-                _ws_broadcast('mouse_scroll', {'x': x, 'y': y, 'dx': dx, 'dy': dy})
+                if ws_loop:
+                    asyncio.run_coroutine_threadsafe(
+                        _ws_broadcast({'tipo': 'mouse_scroll', 'data': {'x': x, 'y': y, 'dx': dx, 'dy': dy}}),
+                        ws_loop
+                    )
             except queue.Full:
                 pass
 
@@ -353,7 +357,11 @@ def iniciar_grabacion():
             try:
                 eventos_queue.put_nowait(('key_press', time.time() - tiempo_inicio, key))
                 key_str = getattr(key, 'char', None) or str(key)
-                _ws_broadcast('key_press', {'key': key_str})
+                if ws_loop:
+                    asyncio.run_coroutine_threadsafe(
+                        _ws_broadcast({'tipo': 'key_press', 'data': {'key': key_str}}),
+                        ws_loop
+                    )
             except queue.Full:
                 pass
 
@@ -362,7 +370,11 @@ def iniciar_grabacion():
             try:
                 eventos_queue.put_nowait(('key_release', time.time() - tiempo_inicio, key))
                 key_str = getattr(key, 'char', None) or str(key)
-                _ws_broadcast('key_release', {'key': key_str})
+                if ws_loop:
+                    asyncio.run_coroutine_threadsafe(
+                        _ws_broadcast({'tipo': 'key_release', 'data': {'key': key_str}}),
+                        ws_loop
+                    )
             except queue.Full:
                 pass
 

@@ -79,13 +79,11 @@ def _start_ws_server():
     """Run the WebSocket server in its own asyncio loop."""
     global ws_loop
 
-    async def _run():
-        async with websockets.serve(_ws_handler, "127.0.0.1", 8765):
-            await asyncio.Future()  # run forever
-
     ws_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(ws_loop)
-    ws_loop.run_until_complete(_run())
+    server = websockets.serve(_ws_handler, "127.0.0.1", 8765)
+    ws_loop.run_until_complete(server)
+    ws_loop.run_forever()
 
 ws_thread = threading.Thread(target=_start_ws_server, daemon=True)
 ws_thread.start()
@@ -93,6 +91,7 @@ ws_thread.start()
 def _ws_broadcast(tipo, data):
     if not grabando or not ws_clients or ws_loop is None:
         return
+
     mensaje = json.dumps({"tipo": tipo, "data": data})
     for ws in list(ws_clients):
         if ws.closed:

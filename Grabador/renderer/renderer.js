@@ -52,6 +52,7 @@ function bloquearTemporalmente(ms = 500) {
 function connectWS() {
     if (ws) return;
     ws = new WebSocket('ws://127.0.0.1:8765');
+    ws.onopen = () => console.log('WS connected');
     ws.onmessage = (ev) => {
         if (estado !== 'recording') return;
         try {
@@ -62,6 +63,7 @@ function connectWS() {
         }
     };
     ws.onclose = () => { ws = null; };
+    ws.onerror = (e) => { console.error('WS error', e); };
 }
 
 function disconnectWS() {
@@ -120,8 +122,8 @@ function iniciarEstadoPolling() {
 }
 
 window.startBackendRecording = () => {
-    enviarComando("grabar");
     connectWS();
+    enviarComando("grabar");
     if (window.startCapture) {
         try { window.startCapture(); } catch (e) { console.error(e); }
     }

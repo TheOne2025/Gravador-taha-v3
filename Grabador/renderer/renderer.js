@@ -44,7 +44,7 @@ async function verificarBackend() {
     }
 }
 
-function bloquearTemporalmente(ms = 500) {
+function bloquearTemporalmente(ms = 100) {
     bloqueado = true;
     setTimeout(() => bloqueado = false, ms);
 }

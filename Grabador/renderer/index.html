@@ -899,13 +899,15 @@
         }
 
         /* Animaciones */
-        @keyframes fadeFlash {
-            from {
+        @keyframes highlightEntry {
+            0% {
                 opacity: 0;
-                background-color: rgba(255, 255, 255, 0.2);
+                transform: translateY(-4px);
+                background-color: rgba(231, 76, 60, 0.3);
             }
-            to {
+            100% {
                 opacity: 1;
+                transform: translateY(0);
                 background-color: var(--bg-card);
             }
         }
@@ -916,7 +918,7 @@
         }
 
         .animate-in {
-            animation: fadeFlash 0.15s ease-out forwards;
+            animation: highlightEntry 0.25s ease-out forwards;
         }
 
         /* Tooltips */

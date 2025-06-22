@@ -1683,9 +1683,7 @@ html, body {
 
         // Actualizar reloj de grabación
 
-        // --- Captura y registro de actividad real ---
-        let capturing = false;
-        let lastMoveTime = 0;
+        // --- Registro de actividad recibido del backend ---
 
         function addActivityEntry(type, text, css) {
             const log = document.getElementById('activity-log');
@@ -1701,39 +1699,7 @@ html, body {
             if (log.children.length > 20) log.removeChild(log.lastChild);
         }
 
-        function onMove(e) {
-            const now = Date.now();
-            if (now - lastMoveTime < 200) return;
-            lastMoveTime = now;
-            addActivityEntry('mouse', `Movimiento a (${e.clientX}, ${e.clientY})`, 'mouse');
-        }
 
-        function onDown(e) {
-            const names = ['izquierdo', 'medio', 'derecho'];
-            const name = names[e.button] || e.button;
-            addActivityEntry('click', `Click ${name}`, 'click');
-        }
-
-        function onKey(e) {
-            if (e.repeat) return;
-            addActivityEntry('keyboard', `Tecla ${e.key} presionada`, 'keyboard');
-        }
-
-        function startCapture() {
-            if (capturing) return;
-            capturing = true;
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mousedown', onDown);
-            document.addEventListener('keydown', onKey);
-        }
-
-        function stopCapture() {
-            if (!capturing) return;
-            capturing = false;
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mousedown', onDown);
-            document.removeEventListener('keydown', onKey);
-        }
 
         // Navegación entre secciones
         function showSection(sectionName) {
@@ -1958,8 +1924,6 @@ html, body {
             toggleSidebarScroll();
         }
 
-        window.startCapture = startCapture;
-        window.stopCapture = stopCapture;
         window.addActivityEntry = addActivityEntry;
 
         document.addEventListener('DOMContentLoaded', () => {

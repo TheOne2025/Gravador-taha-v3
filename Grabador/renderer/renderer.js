@@ -124,18 +124,12 @@ function iniciarEstadoPolling() {
 window.startBackendRecording = () => {
     connectWS();
     enviarComando("grabar");
-    if (window.startCapture) {
-        try { window.startCapture(); } catch (e) { console.error(e); }
-    }
     actualizarEstado();
 };
 
 window.stopBackendRecording = () => {
     enviarComando("detener");
     disconnectWS();
-    if (window.stopCapture) {
-        try { window.stopCapture(); } catch (e) { console.error(e); }
-    }
     actualizarEstado();
 };
 
@@ -199,14 +193,8 @@ window.pauseRecording = () => {
 
     if (estado === "recording") {
         estado = "paused";
-        if (window.stopCapture) {
-            try { window.stopCapture(); } catch (e) { console.error(e); }
-        }
     } else if (estado === "paused") {
         estado = "recording";
-        if (window.startCapture) {
-            try { window.startCapture(); } catch (e) { console.error(e); }
-        }
     }
     actualizarUI();
 };
@@ -218,9 +206,6 @@ window.stopRecording = () => {
     if (estado !== "idle") {
         estado = "idle";
         stopBackendRecording();
-        if (window.stopCapture) {
-            try { window.stopCapture(); } catch (e) { console.error(e); }
-        }
         hayGrabacion = true;
         actualizarUI();
     }

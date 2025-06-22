@@ -37,6 +37,16 @@ kl = None
 tiempo_inicio = 0.0
 velocidad_reproduccion = 1.0
 reproductor = None
+config_grabacion = {
+    "mouseMove": True,
+    "mouseClick": True,
+    "keyboard": True,
+    "smartCapture": False,
+    "fps": 60,
+    "compression": "Media",
+    "hotkey": "F9",
+    "startDelay": 0
+}
 
 # Usar RLock para mejor rendimiento en operaciones anidadas
 lock = threading.RLock()
@@ -317,25 +327,36 @@ evento_processor_thread.start()
 
 @app.route("/grabar", methods=["POST"])
 def iniciar_grabacion():
-    global eventos, grabando, ml, kl, tiempo_inicio, grabacion_en_memoria
+    global eventos, grabando, ml, kl, tiempo_inicio, grabacion_en_memoria, config_grabacion
     
+    opts = request.get_json(force=True) if request.data else {}
     with lock:
         if grabando:
             return jsonify({"error": "Ya hay una grabación en curso"}), 400
-        
+
         eventos = []
         grabacion_en_memoria = BytesIO()
         grabando = True
         tiempo_inicio = time.time()
+
+        config_grabacion.update({
+            "mouseMove": bool(opts.get("mouseMove", True)),
+            "mouseClick": bool(opts.get("mouseClick", True)),
+            "keyboard": bool(opts.get("keyboard", True)),
+            "smartCapture": bool(opts.get("smartCapture", False)),
+            "fps": max(1, min(144, int(opts.get("fps", 60))))
+        })
     
     # Actualizar cache inmediatamente
     actualizar_estado_cache()
     
     ultima_posicion = [None]
     ultimo_tiempo_move = [0]
+    intervalo_move = 1.0 / config_grabacion.get("fps", 60)
+    ultima_tecla = [None]
 
     def on_click(x, y, button, pressed):
-        if grabando:
+        if grabando and config_grabacion.get("mouseClick", True):
             try:
                 eventos_queue.put_nowait(('mouse_click', time.time() - tiempo_inicio, (x, y, button, pressed)))
                 btn_name = str(button).split('.')[-1]
@@ -344,11 +365,11 @@ def iniciar_grabacion():
                 pass  # Descartar evento si la cola está llena
 
     def on_move(x, y):
-        if grabando:
+        if grabando and config_grabacion.get("mouseMove", True):
             tiempo_actual = time.time()
-            if tiempo_actual - ultimo_tiempo_move[0] >= 0.01:
+            if tiempo_actual - ultimo_tiempo_move[0] >= intervalo_move:
                 actual = (x, y)
-                if actual != ultima_posicion[0]:
+                if not config_grabacion.get("smartCapture") or actual != ultima_posicion[0]:
                     try:
                         eventos_queue.put_nowait(('mouse_move', tiempo_actual - tiempo_inicio, actual))
                         ultima_posicion[0] = actual
@@ -358,7 +379,7 @@ def iniciar_grabacion():
                         pass
 
     def on_scroll(x, y, dx, dy):
-        if grabando:
+        if grabando and config_grabacion.get("mouseMove", True):
             try:
                 eventos_queue.put_nowait(('mouse_scroll', time.time() - tiempo_inicio, (x, y, dx, dy)))
                 safe_ws_broadcast({'tipo': 'mouse_scroll', 'data': {'x': x, 'y': y, 'dx': dx, 'dy': dy}})
@@ -366,20 +387,24 @@ def iniciar_grabacion():
                 pass
 
     def on_press(key):
-        if grabando:
+        if grabando and config_grabacion.get("keyboard", True):
             try:
-                eventos_queue.put_nowait(('key_press', time.time() - tiempo_inicio, key))
                 key_str = getattr(key, 'char', None) or str(key)
-                safe_ws_broadcast({'tipo': 'key_press', 'data': {'key': key_str}})
+                if not config_grabacion.get("smartCapture") or ultima_tecla[0] != ("press", key_str):
+                    eventos_queue.put_nowait(('key_press', time.time() - tiempo_inicio, key))
+                    safe_ws_broadcast({'tipo': 'key_press', 'data': {'key': key_str}})
+                ultima_tecla[0] = ("press", key_str)
             except queue.Full:
                 pass
 
     def on_release(key):
-        if grabando:
+        if grabando and config_grabacion.get("keyboard", True):
             try:
-                eventos_queue.put_nowait(('key_release', time.time() - tiempo_inicio, key))
                 key_str = getattr(key, 'char', None) or str(key)
-                safe_ws_broadcast({'tipo': 'key_release', 'data': {'key': key_str}})
+                if not config_grabacion.get("smartCapture") or ultima_tecla[0] != ("release", key_str):
+                    eventos_queue.put_nowait(('key_release', time.time() - tiempo_inicio, key))
+                    safe_ws_broadcast({'tipo': 'key_release', 'data': {'key': key_str}})
+                ultima_tecla[0] = ("release", key_str)
             except queue.Full:
                 pass
 

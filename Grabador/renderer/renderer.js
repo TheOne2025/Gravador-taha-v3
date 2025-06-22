@@ -44,7 +44,7 @@ async function verificarBackend() {
     }
 }
 
-function bloquearTemporalmente(ms = 500) {
+function bloquearTemporalmente(ms = 100) {
     bloqueado = true;
     setTimeout(() => bloqueado = false, ms);
 }
@@ -122,8 +122,16 @@ function iniciarEstadoPolling() {
 
 window.startBackendRecording = () => {
     connectWS();
-    enviarComando("grabar");
-    actualizarEstado();
+    const opts = window.recordingOptions || {};
+    if (opts.startDelay && opts.startDelay > 0) {
+        setTimeout(() => {
+            enviarComando("grabar", opts);
+            actualizarEstado();
+        }, opts.startDelay * 1000);
+    } else {
+        enviarComando("grabar", opts);
+        actualizarEstado();
+    }
 };
 
 window.stopBackendRecording = () => {

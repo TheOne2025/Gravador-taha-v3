@@ -54,7 +54,6 @@ function connectWS() {
     ws = new WebSocket('ws://127.0.0.1:8765');
     ws.onopen = () => console.log('WS connected');
     ws.onmessage = (ev) => {
-        if (estado !== 'recording') return;
         try {
             const { tipo, data } = JSON.parse(ev.data);
             window.addActivityEntry?.(tipo, JSON.stringify(data), tipo);
@@ -232,6 +231,7 @@ async function init() {
     conectarControles();
     actualizarUI();
     if (await verificarBackend()) {
+        connectWS();
         iniciarEstadoPolling();
     }
 }

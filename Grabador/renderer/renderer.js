@@ -19,18 +19,42 @@ let estado = "idle"; // idle | recording | paused | playing
 let hayGrabacion = false;
 let bloqueado = false;
 let ws;
+const notifications = [];
+let unreadNotifications = 0;
+
+function actualizarMuro() {
+    const wall = document.getElementById('notification-wall');
+    if (!wall) return;
+    wall.innerHTML = notifications.map(n => {
+        const time = n.time.toTimeString().split(' ')[0];
+        return `\n            <div class="notification-item">\n                <strong>${n.titulo}</strong>\n                <span class="notification-time">${time}</span>\n                <div>${n.cuerpo}</div>\n            </div>`;
+    }).join('');
+}
+
+function actualizarBadge() {
+    const badge = document.querySelector('.notification-badge');
+    if (badge) {
+        badge.style.display = unreadNotifications > 0 ? 'block' : 'none';
+    }
+}
 
 function mostrarNotificacion(titulo, cuerpo) {
-    if (!window.Notification) return;
-    if (Notification.permission === "granted") {
-        new Notification(titulo, { body: cuerpo });
-    } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(p => {
-            if (p === "granted") {
-                new Notification(titulo, { body: cuerpo });
-            }
-        });
+    if (window.Notification) {
+        if (Notification.permission === "granted") {
+            new Notification(titulo, { body: cuerpo });
+        } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then(p => {
+                if (p === "granted") {
+                    new Notification(titulo, { body: cuerpo });
+                }
+            });
+        }
     }
+
+    notifications.unshift({ titulo, cuerpo, time: new Date() });
+    unreadNotifications++;
+    actualizarMuro();
+    actualizarBadge();
 }
 
 async function verificarBackend() {
@@ -248,3 +272,5 @@ if (document.readyState === "loading") {
 } else {
     init();
 }
+
+window.actualizarBadge = actualizarBadge;

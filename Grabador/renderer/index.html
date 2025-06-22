@@ -144,6 +144,41 @@
             animation: pulse 2s infinite;
         }
 
+        .notification-wall {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            width: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 10px;
+            display: none;
+            z-index: 999;
+        }
+
+        .notification-wall.visible {
+            display: block;
+        }
+
+        .notification-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-time {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
         /* Layout principal */
         .main-layout {
             display: flex;
@@ -1206,6 +1241,7 @@ html, body {
                 </button>
             </div>
         </div>
+        <div id="notification-wall" class="notification-wall"></div>
 
         <div class="main-layout">
             <!-- Sidebar -->
@@ -1807,7 +1843,13 @@ html, body {
         }
 
         function showNotifications() {
-            console.log('Mostrando notificaciones...');
+            const wall = document.getElementById('notification-wall');
+            if (!wall) return;
+            wall.classList.toggle('visible');
+            if (wall.classList.contains('visible')) {
+                unreadNotifications = 0;
+                if (window.actualizarBadge) window.actualizarBadge();
+            }
         }
 
         function showSettings() {
@@ -1884,10 +1926,8 @@ html, body {
 
         // Animación de la barra de notificación
         const badge = document.querySelector('.notification-badge');
-        if (badge) {
-            setInterval(() => {
-                badge.style.display = Math.random() > 0.7 ? 'block' : 'none';
-            }, 10000);
+        if (badge && window.actualizarBadge) {
+            window.actualizarBadge();
         }
     
         function handleContentScrollState() {
@@ -1968,6 +2008,7 @@ html, body {
         document.addEventListener('DOMContentLoaded', () => {
             handleContentScrollState();
             handleSidebarScrollState();
+            if (window.actualizarBadge) window.actualizarBadge();
         });
     </script>
 <script src="renderer.js"></script>

@@ -60,7 +60,7 @@ eventos_queue = queue.Queue(maxsize=10000)
 
 # --- WebSocket server setup ---
 ws_clients = set()
-ws_loop = asyncio.new_event_loop()
+ws_loop = None
 
 def _handle_ws_future(fut, ws):
     try:
@@ -76,6 +76,8 @@ async def _ws_handler(websocket):
         ws_clients.discard(websocket)
 
 def _start_ws_server():
+    global ws_loop
+    ws_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(ws_loop)
     server = websockets.serve(_ws_handler, "127.0.0.1", 8765)
     ws_loop.run_until_complete(server)
@@ -85,15 +87,18 @@ ws_thread = threading.Thread(target=_start_ws_server, daemon=True)
 ws_thread.start()
 
 def _ws_broadcast(tipo, data):
-    if not grabando or not ws_clients:
+    if not grabando or not ws_clients or ws_loop is None:
         return
-    mensaje = json.dumps({"type": tipo, "data": data})
+    mensaje = json.dumps({"tipo": tipo, "data": data})
     for ws in list(ws_clients):
         if ws.closed:
             ws_clients.discard(ws)
             continue
-        fut = asyncio.run_coroutine_threadsafe(ws.send(mensaje), ws_loop)
-        fut.add_done_callback(lambda f, w=ws: _handle_ws_future(f, w))
+        try:
+            fut = asyncio.run_coroutine_threadsafe(ws.send(mensaje), ws_loop)
+            fut.add_done_callback(lambda f, w=ws: _handle_ws_future(f, w))
+        except Exception:
+            ws_clients.discard(ws)
 
 class Reproductor:
     def __init__(self, eventos, velocidad=1.0, on_finish=None):

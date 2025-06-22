@@ -55,19 +55,8 @@ function connectWS() {
     ws.onmessage = (ev) => {
         if (estado !== 'recording') return;
         try {
-            const { type, data } = JSON.parse(ev.data);
-            if (type === 'mouse_move') {
-                window.addActivityEntry?.('mouse', `Movimiento a (${data.x}, ${data.y})`, 'mouse');
-            } else if (type === 'mouse_click') {
-                const names = { left: 'izquierdo', middle: 'medio', right: 'derecho' };
-                const name = names[data.button] || data.button;
-                const action = data.pressed ? 'presionado' : 'liberado';
-                window.addActivityEntry?.('click', `Click ${name} ${action}`, 'click');
-            } else if (type === 'mouse_scroll') {
-                window.addActivityEntry?.('scroll', `Scroll (${data.dx}, ${data.dy})`, 'scroll');
-            } else if (type === 'key_press') {
-                window.addActivityEntry?.('keyboard', `Tecla ${data.key} presionada`, 'keyboard');
-            }
+            const { tipo, data } = JSON.parse(ev.data);
+            window.addActivityEntry?.(tipo, JSON.stringify(data), tipo);
         } catch (e) {
             console.error('WS parse error', e);
         }

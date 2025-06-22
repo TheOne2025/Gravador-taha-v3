@@ -48,6 +48,9 @@ config_grabacion = {
     "startDelay": 0
 }
 
+# Indica si la reproducción se detuvo por intervención del usuario
+intervencion_usuario = False
+
 # Usar RLock para mejor rendimiento en operaciones anidadas
 lock = threading.RLock()
 
@@ -60,7 +63,8 @@ estado_cache = {
     "duracion": 0.0,
     "acciones": 0,
     "tamano": 0,
-    "fps": 0.0
+    "fps": 0.0,
+    "interrumpido": False
 }
 estado_cache_lock = threading.Lock()
 estado_cache_timestamp = 0
@@ -144,7 +148,11 @@ class Reproductor:
 
     def iniciar(self):
         """Iniciar reproducción de forma asíncrona"""
+        global intervencion_usuario
         self._stop_event.clear()
+        # Resetear bandera de intervención al iniciar la reproducción
+        with lock:
+            intervencion_usuario = False
         # Ignorar cualquier entrada del usuario durante un breve periodo de
         # arranque para evitar que un movimiento involuntario cancele la
         # reproducción inmediatamente.
@@ -175,7 +183,10 @@ class Reproductor:
 
     def _on_user_input(self, *args, **kwargs):
         """Detener reproducción si el usuario mueve el ratón manualmente"""
+        global intervencion_usuario
         if time.time() > self._ignore_until:
+            with lock:
+                intervencion_usuario = True
             self.detener()
 
     def _reproducir(self):
@@ -292,7 +303,8 @@ def actualizar_estado_cache():
                 "duracion": duracion,
                 "acciones": acciones,
                 "tamano": tamano,
-                "fps": fps
+                "fps": fps,
+                "interrumpido": intervencion_usuario
             })
             estado_cache_timestamp = time.time()
 
@@ -462,7 +474,7 @@ def detener_grabacion():
 
 @app.route("/reproducir", methods=["POST"])
 def reproducir():
-    global reproductor
+    global reproductor, intervencion_usuario
     
     with lock:
         if reproductor and reproductor._thread and reproductor._thread.is_alive():
@@ -480,6 +492,7 @@ def reproducir():
         # Obtener velocidad del request
         velocidad = request.json.get("velocidad", velocidad_reproduccion) if request.json else velocidad_reproduccion
         
+        intervencion_usuario = False
         reproductor = Reproductor(eventos_reproducir, velocidad, on_finish=_reproduccion_finalizada)
     
     # Iniciar reproducción de forma asíncrona
@@ -601,16 +614,20 @@ def cargar_archivo():
 @app.route("/estado", methods=["GET"])
 def obtener_estado():
     """Endpoint optimizado para verificar el estado actual del sistema"""
-    # Verificar si el cache es reciente (menos de 100ms)
-    with estado_cache_lock:
-        if time.time() - estado_cache_timestamp < 0.1:
-            return jsonify(estado_cache)
-    
-    # Actualizar cache si es necesario
+    global intervencion_usuario
+
     actualizar_estado_cache()
-    
+
     with estado_cache_lock:
-        return jsonify(estado_cache.copy())
+        data = estado_cache.copy()
+
+    if data.get("interrumpido"):
+        with lock:
+            intervencion_usuario = False
+        actualizar_estado_cache()
+        data["interrumpido"] = True
+
+    return jsonify(data)
 
 # Endpoint para health check rápido
 @app.route("/ping", methods=["GET"])

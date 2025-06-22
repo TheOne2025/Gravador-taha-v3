@@ -75,8 +75,10 @@ def _start_ws_server():
 
     ws_loop = asyncio.new_event_loop()
     asyncio.set_event_loop(ws_loop)
-    start_server = websockets.serve(_ws_handler, "127.0.0.1", 8765)
-    ws_loop.run_until_complete(start_server)
+    # websockets.serve must run inside the loop to avoid 'no running event loop'
+    start_server = ws_loop.run_until_complete(
+        websockets.serve(_ws_handler, "127.0.0.1", 8765)
+    )
     print("WebSocket servidor en ws://127.0.0.1:8765")
     ws_loop.run_forever()
 
@@ -84,10 +86,15 @@ ws_thread = threading.Thread(target=_start_ws_server, daemon=True)
 ws_thread.start()
 
 async def _ws_broadcast(msg):
+    """Send a message to all connected clients if recording."""
+    if not grabando or not ws_clients:
+        return
+
     desconectados = []
+    payload = json.dumps(msg)
     for ws in list(ws_clients):
         try:
-            await ws.send(json.dumps(msg))
+            await ws.send(payload)
         except websockets.ConnectionClosed:
             desconectados.append(ws)
         except Exception:

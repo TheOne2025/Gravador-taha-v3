@@ -12,6 +12,8 @@ from pynput.keyboard import Controller as KeyboardController, Key
 import json
 from concurrent.futures import ThreadPoolExecutor
 import queue
+import asyncio
+import websockets
 
 app = Flask(__name__)
 from flask_cors import CORS
@@ -55,6 +57,33 @@ estado_cache_timestamp = 0
 
 # Cola de eventos para procesamiento asíncrono
 eventos_queue = queue.Queue(maxsize=10000)
+
+# --- WebSocket server setup ---
+ws_clients = set()
+ws_loop = asyncio.new_event_loop()
+
+async def _ws_handler(websocket):
+    ws_clients.add(websocket)
+    try:
+        await websocket.wait_closed()
+    finally:
+        ws_clients.discard(websocket)
+
+def _start_ws_server():
+    asyncio.set_event_loop(ws_loop)
+    server = websockets.serve(_ws_handler, "127.0.0.1", 8765)
+    ws_loop.run_until_complete(server)
+    ws_loop.run_forever()
+
+ws_thread = threading.Thread(target=_start_ws_server, daemon=True)
+ws_thread.start()
+
+def _ws_broadcast(tipo, data):
+    if not grabando or not ws_clients:
+        return
+    mensaje = json.dumps({"type": tipo, "data": data})
+    for ws in list(ws_clients):
+        asyncio.run_coroutine_threadsafe(ws.send(mensaje), ws_loop)
 
 class Reproductor:
     def __init__(self, eventos, velocidad=1.0, on_finish=None):
@@ -274,6 +303,8 @@ def iniciar_grabacion():
         if grabando:
             try:
                 eventos_queue.put_nowait(('mouse_click', time.time() - tiempo_inicio, (x, y, button, pressed)))
+                btn_name = str(button).split('.')[-1]
+                _ws_broadcast('mouse_click', {'x': x, 'y': y, 'button': btn_name, 'pressed': pressed})
             except queue.Full:
                 pass  # Descartar evento si la cola está llena
 
@@ -287,6 +318,7 @@ def iniciar_grabacion():
                         eventos_queue.put_nowait(('mouse_move', tiempo_actual - tiempo_inicio, actual))
                         ultima_posicion[0] = actual
                         ultimo_tiempo_move[0] = tiempo_actual
+                        _ws_broadcast('mouse_move', {'x': x, 'y': y})
                     except queue.Full:
                         pass
 
@@ -294,6 +326,7 @@ def iniciar_grabacion():
         if grabando:
             try:
                 eventos_queue.put_nowait(('mouse_scroll', time.time() - tiempo_inicio, (x, y, dx, dy)))
+                _ws_broadcast('mouse_scroll', {'x': x, 'y': y, 'dx': dx, 'dy': dy})
             except queue.Full:
                 pass
 
@@ -301,6 +334,8 @@ def iniciar_grabacion():
         if grabando:
             try:
                 eventos_queue.put_nowait(('key_press', time.time() - tiempo_inicio, key))
+                key_str = getattr(key, 'char', None) or str(key)
+                _ws_broadcast('key_press', {'key': key_str})
             except queue.Full:
                 pass
 
@@ -308,6 +343,8 @@ def iniciar_grabacion():
         if grabando:
             try:
                 eventos_queue.put_nowait(('key_release', time.time() - tiempo_inicio, key))
+                key_str = getattr(key, 'char', None) or str(key)
+                _ws_broadcast('key_release', {'key': key_str})
             except queue.Full:
                 pass
 

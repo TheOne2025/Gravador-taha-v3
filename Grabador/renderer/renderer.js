@@ -18,6 +18,7 @@ async function enviarComando(endpoint, data = {}) {
 let estado = "idle"; // idle | recording | paused | playing
 let hayGrabacion = false;
 let bloqueado = false;
+let ws;
 
 function mostrarNotificacion(titulo, cuerpo) {
     if (!window.Notification) return;
@@ -46,6 +47,39 @@ async function verificarBackend() {
 function bloquearTemporalmente(ms = 500) {
     bloqueado = true;
     setTimeout(() => bloqueado = false, ms);
+}
+
+function connectWS() {
+    if (ws) return;
+    ws = new WebSocket('ws://127.0.0.1:8765');
+    ws.onmessage = (ev) => {
+        if (estado !== 'recording') return;
+        try {
+            const { type, data } = JSON.parse(ev.data);
+            if (type === 'mouse_move') {
+                window.addActivityEntry?.('mouse', `Movimiento a (${data.x}, ${data.y})`, 'mouse');
+            } else if (type === 'mouse_click') {
+                const names = { left: 'izquierdo', middle: 'medio', right: 'derecho' };
+                const name = names[data.button] || data.button;
+                const action = data.pressed ? 'presionado' : 'liberado';
+                window.addActivityEntry?.('click', `Click ${name} ${action}`, 'click');
+            } else if (type === 'mouse_scroll') {
+                window.addActivityEntry?.('scroll', `Scroll (${data.dx}, ${data.dy})`, 'scroll');
+            } else if (type === 'key_press') {
+                window.addActivityEntry?.('keyboard', `Tecla ${data.key} presionada`, 'keyboard');
+            }
+        } catch (e) {
+            console.error('WS parse error', e);
+        }
+    };
+    ws.onclose = () => { ws = null; };
+}
+
+function disconnectWS() {
+    if (ws) {
+        ws.close();
+        ws = null;
+    }
 }
 
 async function actualizarEstado() {
@@ -98,6 +132,7 @@ function iniciarEstadoPolling() {
 
 window.startBackendRecording = () => {
     enviarComando("grabar");
+    connectWS();
     if (window.startCapture) {
         try { window.startCapture(); } catch (e) { console.error(e); }
     }
@@ -106,6 +141,7 @@ window.startBackendRecording = () => {
 
 window.stopBackendRecording = () => {
     enviarComando("detener");
+    disconnectWS();
     if (window.stopCapture) {
         try { window.stopCapture(); } catch (e) { console.error(e); }
     }

@@ -1,0 +1,14 @@
+{
+  "name": "macro-recorder-pro",
+  "version": "1.0.0",
+  "description": "Proyecto Electron con recarga automática",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^29.0.0",
+    "electron-reload": "^1.5.0"
+  }
+}

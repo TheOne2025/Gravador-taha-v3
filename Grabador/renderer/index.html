@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Macro Recorder Pro - Grabador Avanzado</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        :root {
+            /* Colores estilo DriverBooster */
+            --primary-red: #e74c3c;
+            --primary-red-dark: #c0392b;
+            --primary-red-light: #ff6b6b;
+            --accent-orange: #ff6348;
+            --bg-dark: #1a1a1a;
+            --bg-darker: #0f0f0f;
+            --bg-panel: #242424;
+            --bg-card: #2a2a2a;
+            --bg-hover: #333333;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+            --text-muted: #808080;
+            --border-color: #3a3a3a;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --info: #3498db;
+            --shadow: 0 4px 20px rgba(0,0,0,0.5);
+            --glow-red: 0 0 20px rgba(231, 76, 60, 0.5);
+        }
+
+        body {
+            background: var(--bg-darker);
+            color: var(--text-primary);
+            overflow-y: auto;
+    overflow-x: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* Efecto de gradiente de fondo */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 80%, rgba(231, 76, 60, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 80% 20%, rgba(231, 76, 60, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .app-container {
+            position: relative;
+            z-index: 2;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Barra de título personalizada */
+        .titlebar {
+            height: 45px;
+            background: linear-gradient(to bottom, var(--bg-panel), var(--bg-dark));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .titlebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--primary-red);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--glow-red);
+        }
+
+        .titlebar-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .titlebar-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            -webkit-app-region: no-drag;
+        }
+
+        .titlebar-btn {
+            width: 35px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .titlebar-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .titlebar-btn.close:hover {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            width: 8px;
+            height: 8px;
+            background: var(--primary-red);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        /* Layout principal */
+        .main-layout {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: var(--bg-panel);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .sidebar-section {
+            padding: 20px 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .sidebar-section-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary-red);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-hover);
+        }
+
+        .nav-item.active {
+            background: rgba(231, 76, 60, 0.1);
+            color: var(--primary-red);
+        }
+
+        .nav-item.active::before {
+            transform: translateX(0);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            background: var(--primary-red);
+            color: white;
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 600;
+        }
+
+        /* Estilos especiales para botones de licencia */
+        .nav-item.buy-btn {
+            background: linear-gradient(135deg, var(--primary-red) 0%, var(--primary-red-dark) 100%);
+            color: white;
+            font-weight: 600;
+            margin-bottom: 8px;
+            box-shadow: 0 2px 10px rgba(231, 76, 60, 0.3);
+        }
+
+        .nav-item.buy-btn:hover {
+            background: linear-gradient(135deg, var(--primary-red-light) 0%, var(--primary-red) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .nav-item.key-btn {
+            background: linear-gradient(135deg, var(--info) 0%, #2980b9 100%);
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.3);
+        }
+
+        .nav-item.key-btn:hover {
+            background: linear-gradient(135deg, #5dade2 0%, var(--info) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            max-width: 400px;
+            width: 85%;
+            border: 1px solid var(--border-color);
+            position: relative;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        .modal-body {
+            margin-bottom: 25px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            margin-bottom: 15px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-input:focus {
+            outline: none;
+            border-color: var(--primary-red);
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .modal-btn.primary {
+            background: var(--primary-red);
+            color: white;
+        }
+
+        .modal-btn.primary:hover {
+            background: var(--primary-red-dark);
+        }
+
+        .modal-btn.secondary {
+            background: var(--bg-darker);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .modal-btn.secondary:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+        }
+
+        /* Contenido principal */
+        .content {
+            flex: 1;
+            background: var(--bg-dark);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-header {
+            background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-dark) 100%);
+            padding: 30px;
+            border-bottom: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .content-header::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(231, 76, 60, 0.1) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .header-info {
+            position: relative;
+            z-index: 1;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-red) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .page-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+
+        .content-body {
+            flex: 1;
+            padding: 25px;
+            overflow-y: auto;
+        }
+
+        /* Cards y componentes */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-red) 0%, var(--accent-orange) 100%);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+            border-color: var(--primary-red);
+        }
+
+        .card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-red);
+        }
+
+        /* Controles de grabación avanzados */
+        .recording-controls {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .control-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .control-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid var(--border-color);
+            background: transparent;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: var(--primary-red);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+            z-index: -1;
+        }
+
+        .control-btn:hover::before {
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-btn:hover {
+            color: white;
+            border-color: var(--primary-red);
+            transform: scale(1.05);
+            box-shadow: var(--glow-red);
+        }
+
+        .control-btn.record {
+            border-color: var(--primary-red);
+            color: var(--primary-red);
+        }
+
+        .control-btn.record.recording {
+            animation: recordPulse 1.5s infinite;
+            background: var(--primary-red);
+            color: white;
+        }
+
+
+        @keyframes recordPulse {
+            0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.7); }
+            50% { box-shadow: 0 0 0 15px rgba(231, 76, 60, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+        }
+
+        /* Actividad en tiempo real */
+        .activity-container {
+            background: var(--bg-darker);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .activity-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        /* Estadísticas avanzadas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .stat-card {
+            background: var(--bg-darker);
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary-red);
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-red);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Configuración avanzada */
+        .settings-section {
+            margin-bottom: 30px;
+        }
+
+        .settings-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-grid {
+            display: grid;
+            gap: 15px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .setting-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary-red);
+        }
+
+        .setting-info {
+            flex: 1;
+        }
+
+        .setting-label {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .setting-description {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        /* Toggle switch mejorado */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: var(--bg-darker);
+            border-radius: 26px;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary-red);
+            border-color: var(--primary-red);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+            background: white;
+        }
+
+        /* Input personalizado */
+        .custom-input {
+            width: 80px;
+            padding: 8px 12px;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            transition: all 0.2s ease;
+            text-align: center;
+        }
+
+        .custom-input:focus {
+            outline: none;
+            border-color: var(--primary-red);
+            box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+        }
+
+        /* Select personalizado */
+        .custom-select {
+            padding: 8px 12px;
+            background: var(--bg-darker);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .custom-select:focus {
+            outline: none;
+            border-color: var(--primary-red);
+        }
+
+        /* Lista de macros */
+        .macro-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .macro-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .macro-item:hover {
+            background: var(--bg-hover);
+            border-color: var(--primary-red);
+            transform: translateX(5px);
+        }
+
+        .macro-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-red);
+        }
+
+        .macro-info {
+            flex: 1;
+        }
+
+        .macro-name {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .macro-details {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .macro-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .macro-action-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .macro-action-btn:hover {
+            background: var(--bg-hover);
+            color: var(--text-primary);
+            border-color: var(--primary-red);
+        }
+
+        /* Modal de acciones */
+        .action-log {
+            height: 300px;
+            background: var(--bg-darker);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow-y: auto;
+            padding: 15px;
+        }
+
+        .action-entry {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin-bottom: 5px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            font-size: 13px;
+            border-left: 3px solid transparent;
+        }
+
+        .action-entry.mouse {
+            border-left-color: var(--info);
+        }
+
+        .action-entry.keyboard {
+            border-left-color: var(--success);
+        }
+
+        .action-entry.click {
+            border-left-color: var(--warning);
+        }
+
+
+
+        .action-time {
+            color: var(--text-muted);
+            font-size: 11px;
+            min-width: 60px;
+        }
+
+        .action-type {
+            background: var(--bg-darker);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-darker);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+            transition: background 0.2s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-red);
+        }
+
+        /* Animaciones */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .animate-in {
+            animation: slideIn 0.5s ease forwards;
+        }
+
+        /* Tooltips */
+        .tooltip {
+            position: relative;
+        }
+
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-darker);
+            color: var(--text-primary);
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            border: 1px solid var(--border-color);
+            margin-bottom: 5px;
+        }
+
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+    
+html, body {
+    height: 100%;
+}
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.main-layout {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.content-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.content-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    position: relative;
+}
+
+.content-body.scrolled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+    pointer-events: none;
+}
+
+
+.sidebar {
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 100vh;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.sidebar.scrolled::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 10px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+    pointer-events: none;
+}
+
+
+.summary-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: space-between;
+    align-items: stretch;
+}
+
+.summary-box {
+    flex: 1 1 200px;
+    min-width: 180px;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #1c1c1c;
+    color: white;
+    overflow: hidden;
+}
+
+
+/* Estilos mejorados para adaptabilidad de los bloques del resumen */
+.summary-container, .resumen-hoy, .resumen-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: flex-start;
+    align-items: stretch;
+}
+
+.summary-box, .resumen-box {
+    flex: 1 1 220px;
+    min-width: 200px;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #1c1c1c;
+    color: white;
+    overflow: hidden;
+    word-wrap: break-word;
+}
+
+
+.summary-container, .resumen-hoy, .resumen-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.summary-box, .resumen-box {
+    min-width: 160px;
+    box-sizing: border-box;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #1c1c1c;
+    color: white;
+    overflow: hidden;
+    height: auto;
+}
+
+
+.summary-container, .resumen-hoy, .resumen-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    align-items: start;
+}
+
+.summary-box, .resumen-box {
+    box-sizing: border-box;
+    padding: 1rem;
+    border-radius: 8px;
+    background-color: #1c1c1c;
+    color: white;
+    overflow: hidden;
+    height: auto;
+    min-width: 0;
+}
+
+
+.summary-box, .resumen-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    min-width: 160px;
+    min-height: 100px;
+    padding: 1rem;
+    flex: 1 1 200px;
+
+    box-sizing: border-box;
+    border-radius: 8px;
+    background-color: #1c1c1c;
+    color: white;
+    overflow: hidden;
+    text-align: center;
+}
+
+.summary-box h2,
+.summary-box p,
+.resumen-box h2,
+.resumen-box p {
+    margin: 0.25rem 0;
+}
+
+
+.summary-box, .resumen-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    min-width: 160px;
+    min-height: 120px;
+    height: 100%;
+    padding: 1rem;
+    flex: 1 1 200px;
+
+    box-sizing: border-box;
+    border-radius: 8px;
+    background-color: #1c1c1c;
+    color: white;
+    overflow: hidden;
+    text-align: center;
+}
+
+.summary-box > *, .resumen-box > * {
+    margin: 0.25rem 0;
+    flex-shrink: 0;
+}
+
+
+.recent-frames {
+    max-height: 40vh;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+    box-sizing: border-box;
+}
+
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Barra de título -->
+        <div class="titlebar">
+            <div class="titlebar-brand">
+                <div class="brand-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="white">
+                        <path d="M19.5 3.5L18 2l-1.5 1.5L15 2l-1.5 1.5L12 2l-1.5 1.5L9 2 7.5 3.5 6 2 4.5 3.5 3 2v20l1.5-1.5L6 22l1.5-1.5L9 22l1.5-1.5L12 22l1.5-1.5L15 22l1.5-1.5L18 22l1.5-1.5L21 22V2l-1.5 1.5zM19 19.09h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+                    </svg>
+                </div>
+                <h1 class="titlebar-title">Macro Recorder Pro</h1>
+            </div>
+            
+            <div class="titlebar-controls">
+                <button class="titlebar-btn tooltip" data-tooltip="Notificaciones" onclick="showNotifications()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.89 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/>
+                    </svg>
+                    <span class="notification-badge"></span>
+                </button>
+                <button class="titlebar-btn tooltip" data-tooltip="Configuración" onclick="showSettings()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+                    </svg>
+                </button>
+                <button class="titlebar-btn" onclick="minimizeWindow()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 13H5v-2h14v2z"/>
+                    </svg>
+                </button>
+                <button class="titlebar-btn" onclick="toggleFullscreen()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z"/>
+                    </svg>
+                </button>
+                <button class="titlebar-btn close" onclick="closeWindow()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Principal</div>
+                    <div class="nav-item active" onclick="showSection('dashboard')">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Dashboard</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('recording')">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 15c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v7c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 15 6.7 12H5c0 3.42 2.72 6.23 6 6.72V22h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Grabación</span>
+                        <span class="nav-badge">REC</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('macros')">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 17v2h6v-2H3zM3 5v2h10V5H3zm10 16v-2h8v-2h-8v-2h-2v6h2zM7 9v2H3v2h4v2h2V9H7zm14 4v-2H11v2h10zm-6-4h2V7h4V5h-4V3h-2v6z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Mis Macros</span>
+                        <span class="nav-badge">12</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Herramientas</div>
+                    <div class="nav-item" onclick="showSection('editor')">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Editor de Macros</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('scheduler')">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Programador</span>
+                    </div>
+                    <div class="nav-item" onclick="showSection('analyzer')">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Analizador</span>
+                    </div>
+                </div>
+                <!-- Nuevos botones añadidos -->
+                <div class="sidebar-section">
+                    <div class="sidebar-section-title">Licencia</div>
+                    <div class="nav-item buy-btn" onclick="comprar()">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M7 18c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12L8.1 13h7.45c.75 0 1.41-.41 1.75-1.03L21.7 4H5.21l-.94-2H1zm16 16c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Comprar</span>
+                    </div>
+                    <div class="nav-item key-btn" onclick="introducirClave()">
+                        <div class="nav-icon">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/>
+                            </svg>
+                        </div>
+                        <span class="nav-text">Introducir Clave</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Contenido principal -->
+            <main class="content">
+                <!-- Dashboard -->
+                <section id="dashboard-section" class="content-section">
+                    <div class="content-header">
+                        <div class="header-info">
+                            <h1 class="page-title">Dashboard</h1>
+                            <p class="page-subtitle">Vista general de tu actividad y estadísticas</p>
+                        </div>
+                    </div>
+                    <div class="content-body">
+                        <div class="dashboard-grid">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <div class="card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                                            </svg>
+                                        </div>
+                                        <span>Resumen de Hoy</span>
+                                    </div>
+                                </div>
+                                <div class="stats-grid">
+                                    <div class="stat-card">
+                                        <div class="stat-value">24</div>
+                                        <div class="stat-label">Macros Ejecutados</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-value">3.2h</div>
+                                        <div class="stat-label">Tiempo Ahorrado</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-value">1,847</div>
+                                        <div class="stat-label">Acciones</div>
+                                    </div>
+                                    <div class="stat-card">
+                                        <div class="stat-value">98%</div>
+                                        <div class="stat-label">Precisión</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <div class="card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/>
+                                            </svg>
+                                        </div>
+                                        <span>Macros Recientes</span>
+                                    </div>
+                                </div>
+                                <div class="macro-list">
+                                    <div class="macro-item">
+                                        <div class="macro-icon">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="macro-info">
+                                            <div class="macro-name">Login Automático</div>
+                                            <div class="macro-details">Ejecutado hace 5 min • 47 acciones</div>
+                                        </div>
+                                        <div class="macro-actions">
+                                            <button class="macro-action-btn tooltip" data-tooltip="Ejecutar">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </button>
+                                            <button class="macro-action-btn tooltip" data-tooltip="Editar">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="macro-item">
+                                        <div class="macro-icon">
+                                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+                                            </svg>
+                                        </div>
+                                        <div class="macro-info">
+                                            <div class="macro-name">Reporte Diario</div>
+                                            <div class="macro-details">Ejecutado hace 2h • 234 acciones</div>
+                                        </div>
+                                        <div class="macro-actions">
+                                            <button class="macro-action-btn tooltip" data-tooltip="Ejecutar">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M8 5v14l11-7z"/>
+                                                </svg>
+                                            </button>
+                                            <button class="macro-action-btn tooltip" data-tooltip="Editar">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </section>
+
+                <!-- Sección de Grabación -->
+                <section id="recording-section" class="content-section" style="display: none;">
+                    <div class="content-header">
+                        <div class="header-info">
+                            <h1 class="page-title">Centro de Grabación</h1>
+                            <p class="page-subtitle">Captura acciones del mouse y teclado con precisión profesional</p>
+                        </div>
+                    </div>
+                    <div class="content-body">
+                        <div class="recording-controls">
+                            <div class="control-buttons">
+                                <button id="btnGrabar" class="control-btn record">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                        <circle cx="12" cy="12" r="8"/>
+                                    </svg>
+                                    <span id="record-text">Grabar</span>
+                                </button>
+                                <button id="btnPausar" class="control-btn">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+                                    </svg>
+                                    <span>Pausar</span>
+                                </button>
+                                <button id="btnDetener" class="control-btn" style="display: none;">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M6 6h12v12H6z"/>
+                                    </svg>
+                                    <span>Detener</span>
+                                </button>
+                                <button id="btnReproducir" class="control-btn">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                    </svg>
+                                    <span>Reproducir</span>
+                                </button>
+                            </div>
+
+
+                            <div class="stats-grid">
+                                <div class="stat-card">
+                                    <div class="stat-value" id="recording-time">00:00:00</div>
+                                    <div class="stat-label">Duración</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="action-count">0</div>
+                                    <div class="stat-label">Acciones</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="file-size">0 KB</div>
+                                    <div class="stat-label">Tamaño</div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-value" id="fps-counter">60</div>
+                                    <div class="stat-label">FPS</div>
+                                </div>
+                            </div>
+
+                            <div class="activity-container">
+                                <span class="activity-title">Actividad en Tiempo Real</span>
+                                <div class="action-log" id="activity-log"></div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-grid">
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <div class="card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                                            </svg>
+                                        </div>
+                                        <span>Opciones de Grabación</span>
+                                    </div>
+                                </div>
+                                <div class="settings-grid">
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Grabar movimientos del mouse</div>
+                                            <div class="setting-description">Captura todos los movimientos del cursor</div>
+                                        </div>
+                                        <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Grabar clicks del mouse</div>
+                                            <div class="setting-description">Registra clicks izquierdo, derecho y medio</div>
+                                        </div>
+                                        <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Grabar entrada de teclado</div>
+                                            <div class="setting-description">Captura todas las teclas presionadas</div>
+                                        </div>
+                                        <div class="toggle-switch active" onclick="toggleSwitch(this)"></div>
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Captura inteligente</div>
+                                            <div class="setting-description">Optimiza la grabación eliminando acciones redundantes</div>
+                                        </div>
+                                        <div class="toggle-switch" onclick="toggleSwitch(this)"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <div class="card-icon">
+                                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h14l4 4V4c0-1.1-.9-2-2-2zm-2 12H6v-2h12v2zm0-3H6V9h12v2zm0-3H6V6h12v2z"/>
+                                            </svg>
+                                        </div>
+                                        <span>Configuración Avanzada</span>
+                                    </div>
+                                </div>
+                                <div class="settings-grid">
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Velocidad de captura</div>
+                                            <div class="setting-description">FPS para la grabación</div>
+                                        </div>
+                                        <input type="number" class="custom-input" value="60" min="1" max="144">
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Calidad de compresión</div>
+                                            <div class="setting-description">Balance entre tamaño y precisión</div>
+                                        </div>
+                                        <select class="custom-select">
+                                            <option>Baja</option>
+                                            <option selected>Media</option>
+                                            <option>Alta</option>
+                                            <option>Sin comprimir</option>
+                                        </select>
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Hotkey de grabación</div>
+                                            <div class="setting-description">Atajo para iniciar/detener</div>
+                                        </div>
+                                        <input type="text" class="custom-input" value="F9" readonly style="width: 60px;">
+                                    </div>
+                                    <div class="setting-item">
+                                        <div class="setting-info">
+                                            <div class="setting-label">Retraso inicial</div>
+                                            <div class="setting-description">Segundos antes de iniciar</div>
+                                        </div>
+                                        <input type="number" class="custom-input" value="3" min="0" max="10">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Otras secciones (ocultas por defecto) -->
+                <section id="macros-section" class="content-section" style="display: none;">
+                    <div class="content-header">
+                        <div class="header-info">
+                            <h1 class="page-title">Biblioteca de Macros</h1>
+                            <p class="page-subtitle">Administra y organiza todos tus macros grabados</p>
+                        </div>
+                    </div>
+                    <div class="content-body">
+                        <div class="card">
+                            <p>Contenido de la biblioteca de macros...</p>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Modal de Compra -->
+        <div id="purchase-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Comprar Macro Recorder Pro</h2>
+                    <button class="modal-close" onclick="closePurchaseModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 15px; color: var(--text-secondary); font-size: 14px;">
+                        Desbloquea todas las funciones premium
+                    </p>
+                    <div style="background: var(--bg-darker); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                        <h4 style="color: var(--primary-red); margin-bottom: 10px; font-size: 14px;">Funciones Premium:</h4>
+                        <ul style="list-style: none; padding: 0; font-size: 13px;">
+                            <li style="margin-bottom: 6px; color: var(--text-secondary);">✓ Grabación ilimitada</li>
+                            <li style="margin-bottom: 6px; color: var(--text-secondary);">✓ Macros avanzados</li>
+                            <li style="margin-bottom: 6px; color: var(--text-secondary);">✓ Programación automática</li>
+                            <li style="margin-bottom: 6px; color: var(--text-secondary);">✓ Soporte técnico premium</li>
+                        </ul>
+                    </div>
+                    <div style="text-align: center; padding: 15px; background: var(--bg-darker); border-radius: 8px;">
+                        <div style="font-size: 28px; font-weight: 700; color: var(--primary-red); margin-bottom: 5px;">
+                            $29.99
+                        </div>
+                        <div style="color: var(--text-muted); font-size: 12px;">Licencia de por vida</div>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn secondary" onclick="closePurchaseModal()">Cancelar</button>
+                    <button class="modal-btn primary" onclick="processPurchase()">Comprar Ahora</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Introducir Clave -->
+        <div id="key-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">Introducir Clave de Licencia</h2>
+                    <button class="modal-close" onclick="closeKeyModal()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                        Introduce tu clave de licencia para activar Macro Recorder Pro
+                    </p>
+                    <input type="text" 
+                           id="license-key" 
+                           class="modal-input" 
+                           placeholder="XXXX-XXXX-XXXX-XXXX" 
+                           maxlength="19"
+                           style="text-transform: uppercase; letter-spacing: 2px; font-family: monospace;">
+                    <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">
+                        Formato: XXXX-XXXX-XXXX-XXXX
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn secondary" onclick="closeKeyModal()">Cancelar</button>
+                    <button class="modal-btn primary" onclick="activateLicense()">Activar Licencia</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Variables globales
+        // Funciones de los nuevos botones
+        function comprar() {
+            document.getElementById('purchase-modal').style.display = 'flex';
+        }
+
+        function introducirClave() {
+            document.getElementById('key-modal').style.display = 'flex';
+        }
+
+        // Funciones de modales
+        function closePurchaseModal() {
+            document.getElementById('purchase-modal').style.display = 'none';
+        }
+
+        function closeKeyModal() {
+            document.getElementById('key-modal').style.display = 'none';
+        }
+
+        function processPurchase() {
+            alert('Redirigiendo al sistema de pago...');
+            closePurchaseModal();
+        }
+
+        function activateLicense() {
+            const key = document.getElementById('license-key').value;
+            if (key.length === 19) {
+                alert('¡Licencia activada correctamente!');
+                closeKeyModal();
+            } else {
+                alert('Por favor, introduce una clave válida');
+            }
+        }
+
+        // Formatear automáticamente la clave de licencia
+        document.addEventListener('DOMContentLoaded', () => {
+            const licenseInput = document.getElementById('license-key');
+            if (licenseInput) {
+                licenseInput.addEventListener('input', function(e) {
+                    let value = e.target.value.replace(/[^A-Z0-9]/g, '');
+                    let formatted = value.match(/.{1,4}/g)?.join('-') || value;
+                    if (formatted.length > 19) formatted = formatted.substring(0, 19);
+                    e.target.value = formatted;
+                });
+            }
+        });
+
+        // Actualizar reloj de grabación
+
+        // --- Captura y registro de actividad real ---
+        let capturing = false;
+        let lastMoveTime = 0;
+
+        function addActivityEntry(type, text, css) {
+            const log = document.getElementById('activity-log');
+            const entry = document.createElement('div');
+            entry.className = `action-entry ${css} animate-in`;
+            const time = new Date().toTimeString().split(' ')[0];
+            entry.innerHTML = `
+                <span class="action-time">${time}</span>
+                <span class="action-type">${type.toUpperCase()}</span>
+                <span>${text}</span>
+            `;
+            log.insertBefore(entry, log.firstChild);
+            if (log.children.length > 20) log.removeChild(log.lastChild);
+        }
+
+        function onMove(e) {
+            const now = Date.now();
+            if (now - lastMoveTime < 200) return;
+            lastMoveTime = now;
+            addActivityEntry('mouse', `Movimiento a (${e.clientX}, ${e.clientY})`, 'mouse');
+        }
+
+        function onDown(e) {
+            const names = ['izquierdo', 'medio', 'derecho'];
+            const name = names[e.button] || e.button;
+            addActivityEntry('click', `Click ${name}`, 'click');
+        }
+
+        function onKey(e) {
+            if (e.repeat) return;
+            addActivityEntry('keyboard', `Tecla ${e.key} presionada`, 'keyboard');
+        }
+
+        function startCapture() {
+            if (capturing) return;
+            capturing = true;
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mousedown', onDown);
+            document.addEventListener('keydown', onKey);
+        }
+
+        function stopCapture() {
+            if (!capturing) return;
+            capturing = false;
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mousedown', onDown);
+            document.removeEventListener('keydown', onKey);
+        }
+
+        // Navegación entre secciones
+        function showSection(sectionName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Mostrar la sección seleccionada
+            const section = document.getElementById(`${sectionName}-section`);
+            if (section) {
+                section.style.display = 'block';
+                
+                // Animar el título
+                const title = section.querySelector('.page-title');
+                const subtitle = section.querySelector('.page-subtitle');
+                if (title) {
+                    title.style.opacity = '0';
+                    title.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        title.style.transition = 'all 0.5s ease';
+                        title.style.opacity = '1';
+                        title.style.transform = 'translateY(0)';
+                    }, 100);
+                }
+                if (subtitle) {
+                    subtitle.style.opacity = '0';
+                    subtitle.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        subtitle.style.transition = 'all 0.5s ease 0.1s';
+                        subtitle.style.opacity = '1';
+                        subtitle.style.transform = 'translateY(0)';
+                    }, 200);
+                }
+            }
+            
+            // Actualizar navegación activa
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event.currentTarget.classList.add('active');
+        }
+
+        // Toggle switches
+        function toggleSwitch(element) {
+            element.classList.toggle('active');
+        }
+
+        // Funciones de ventana
+        function minimizeWindow() {
+            if (window.electron) {
+                window.electron.minimize();
+            }
+        }
+
+        function toggleFullscreen() {
+            if (window.electron) {
+                window.electron.toggleFullscreen();
+            }
+        }
+
+        function closeWindow() {
+            if (window.electron) {
+                window.electron.close();
+            }
+        }
+
+        function showNotifications() {
+            console.log('Mostrando notificaciones...');
+        }
+
+        function showSettings() {
+            showSection('settings');
+        }
+
+
+        // Inicializar tooltips
+        document.querySelectorAll('.tooltip').forEach(element => {
+            element.addEventListener('mouseenter', function() {
+                this.style.position = 'relative';
+            });
+        });
+
+        // Efecto hover en cards
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('mouseenter', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                this.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(231, 76, 60, 0.05), var(--bg-card))`;
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.background = 'var(--bg-card)';
+            });
+            
+            card.addEventListener('mousemove', function(e) {
+                const rect = this.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                this.style.background = `radial-gradient(circle at ${x}px ${y}px, rgba(231, 76, 60, 0.05), var(--bg-card))`;
+            });
+        });
+
+        // Cerrar modales al hacer click fuera
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.style.display = 'none';
+                }
+            });
+        });
+
+        // Animación inicial del dashboard
+        window.addEventListener('load', () => {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.5s ease';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+
+        // Atajos de teclado
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "F9") {
+                e.preventDefault();
+                window.toggleRecording();
+            } else if (e.key === "F10") {
+                e.preventDefault();
+                window.pauseRecording();
+            } else if (e.key === "Escape") {
+                e.preventDefault();
+                window.stopRecording();
+            }
+        });
+
+        // Animación de la barra de notificación
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            setInterval(() => {
+                badge.style.display = Math.random() > 0.7 ? 'block' : 'none';
+            }, 10000);
+        }
+    
+        function handleContentScrollState() {
+            const contentBodies = document.querySelectorAll('.content-body');
+
+            contentBodies.forEach(content => {
+                const checkScroll = () => {
+                    const hasOverflow = content.scrollHeight > content.clientHeight;
+                    content.classList.toggle('scrolled', hasOverflow);
+                };
+
+                new ResizeObserver(checkScroll).observe(content);
+                window.addEventListener('resize', checkScroll);
+                checkScroll();
+            });
+        }
+
+        function showSection(sectionName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+
+            // Mostrar la sección seleccionada
+            const section = document.getElementById(`${sectionName}-section`);
+            if (section) {
+                section.style.display = 'flex';
+
+                // Animar el título
+                const title = section.querySelector('.page-title');
+                const subtitle = section.querySelector('.page-subtitle');
+                if (title) {
+                    title.style.opacity = '0';
+                    title.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        title.style.transition = 'all 0.5s ease';
+                        title.style.opacity = '1';
+                        title.style.transform = 'translateY(0)';
+                    }, 100);
+                }
+                if (subtitle) {
+                    subtitle.style.opacity = '0';
+                    subtitle.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        subtitle.style.transition = 'all 0.5s ease 0.1s';
+                        subtitle.style.opacity = '1';
+                        subtitle.style.transform = 'translateY(0)';
+                    }, 200);
+                }
+
+                // Reaplicar observador de scroll en la nueva sección
+                handleContentScrollState();
+            }
+
+            // Actualizar navegación activa
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            event?.currentTarget?.classList?.add('active');
+        }
+
+        function handleSidebarScrollState() {
+            const sidebar = document.querySelector('.sidebar');
+            if (!sidebar) return;
+
+            const toggleSidebarScroll = () => {
+                const hasOverflow = sidebar.scrollHeight > sidebar.clientHeight;
+                sidebar.classList.toggle('scrolled', hasOverflow);
+            };
+
+            new ResizeObserver(toggleSidebarScroll).observe(sidebar);
+            window.addEventListener('resize', toggleSidebarScroll);
+            toggleSidebarScroll();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            handleContentScrollState();
+            handleSidebarScrollState();
+        });
+    </script>
+<script src="renderer.js"></script>
+</body>
+</html>

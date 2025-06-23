@@ -11,7 +11,7 @@ async function enviarComando(endpoint, data = {}) {
         console.log(`✔️ Comando ${endpoint} ejecutado:`, resultado);
     } catch (error) {
         console.error(`❌ Error al ejecutar ${endpoint}:`, error);
-        mostrarNotificacion('Backend no disponible', 'No se pudo comunicar con el servidor.');
+        agregarNotificacion({ title: 'Backend no disponible', message: 'No se pudo comunicar con el servidor.', type: 'error' });
     }
 }
 
@@ -19,18 +19,131 @@ let estado = "idle"; // idle | recording | paused | playing
 let hayGrabacion = false;
 let bloqueado = false;
 let ws;
+let notifications = [];
+let unreadNotifications = 0;
+let filterType = '';
+let filterState = '';
+let searchText = '';
 
-function mostrarNotificacion(titulo, cuerpo) {
-    if (!window.Notification) return;
-    if (Notification.permission === "granted") {
-        new Notification(titulo, { body: cuerpo });
-    } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(p => {
-            if (p === "granted") {
-                new Notification(titulo, { body: cuerpo });
-            }
-        });
+function loadNotifications() {
+    try {
+        const stored = localStorage.getItem('notifications');
+        if (stored) {
+            notifications = JSON.parse(stored).map(n => ({ ...n, time: new Date(n.time) }));
+            unreadNotifications = notifications.filter(n => !n.read).length;
+        }
+    } catch (e) {
+        notifications = [];
     }
+}
+
+function saveNotifications() {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+}
+
+function filtrar(tipo, estado) {
+    filterType = tipo || '';
+    filterState = estado || '';
+    actualizarMuro();
+}
+
+function buscar(texto) {
+    searchText = (texto || '').toLowerCase();
+    actualizarMuro();
+}
+
+function actualizarMuro() {
+    const list = document.getElementById('notification-list');
+    if (!list) return;
+
+    const filtradas = notifications.filter(n => {
+        if (filterType && n.type !== filterType) return false;
+        if (filterState === 'read' && !n.read) return false;
+        if (filterState === 'unread' && n.read) return false;
+        if (searchText && !n.title.toLowerCase().includes(searchText) && !n.message.toLowerCase().includes(searchText)) return false;
+        return true;
+    });
+
+    list.innerHTML = filtradas.map(n => {
+        const time = n.time.toTimeString().split(' ')[0];
+        const unreadClass = n.read ? '' : 'unread';
+        return `
+            <div class="notification-item ${n.type} ${unreadClass}">
+                <div class="item-content" onclick="marcarComoLeida('${n.id}')">
+                    <strong>${n.title}</strong>
+                    <span class="notification-time">${time}</span>
+                    <div>${n.message}</div>
+                </div>
+                <button class="notification-dismiss" onclick="eliminarNotificacion('${n.id}')">&times;</button>
+            </div>`;
+    }).join('');
+}
+
+function eliminarNotificacion(id) {
+    const idx = notifications.findIndex(n => n.id === id);
+    if (idx !== -1) {
+        notifications.splice(idx, 1);
+        saveNotifications();
+        unreadNotifications = notifications.filter(n => !n.read).length;
+        actualizarMuro();
+        actualizarBadge();
+    }
+}
+
+function marcarComoLeida(id) {
+    const n = notifications.find(n => n.id === id);
+    if (n && !n.read) {
+        n.read = true;
+        unreadNotifications = notifications.filter(n => !n.read).length;
+        saveNotifications();
+        actualizarMuro();
+        actualizarBadge();
+    }
+}
+
+function clearNotifications() {
+    notifications.length = 0;
+    unreadNotifications = 0;
+    saveNotifications();
+    actualizarMuro();
+    actualizarBadge();
+}
+
+function actualizarBadge() {
+    const badge = document.querySelector('.notification-badge');
+    if (badge) {
+        badge.style.display = unreadNotifications > 0 ? 'block' : 'none';
+    }
+}
+
+function agregarNotificacion(n) {
+    const notif = {
+        id: Date.now().toString(),
+        title: n.title || '',
+        message: n.message || '',
+        type: n.type || 'info',
+        time: new Date(),
+        read: false,
+        origin: n.origin || ''
+    };
+
+    if (window.Notification) {
+        if (Notification.permission === 'granted') {
+            new Notification(notif.title, { body: notif.message });
+        } else if (Notification.permission !== 'denied') {
+            Notification.requestPermission().then(p => {
+                if (p === 'granted') {
+                    new Notification(notif.title, { body: notif.message });
+                }
+            });
+        }
+    }
+
+    notifications.unshift(notif);
+    unreadNotifications++;
+    saveNotifications();
+    actualizarMuro();
+    actualizarBadge();
 }
 
 async function verificarBackend() {
@@ -39,7 +152,7 @@ async function verificarBackend() {
         if (!res.ok) throw new Error('Ping failed');
         return true;
     } catch (_) {
-        mostrarNotificacion('Backend no disponible', 'Asegúrate de que el servidor esté en ejecución.');
+        agregarNotificacion({ title: 'Backend no disponible', message: 'Asegúrate de que el servidor esté en ejecución.', type: 'error' });
         return false;
     }
 }
@@ -56,7 +169,11 @@ function connectWS() {
     ws.onmessage = (ev) => {
         try {
             const { tipo, data } = JSON.parse(ev.data);
-            window.addActivityEntry?.(tipo, JSON.stringify(data), tipo);
+            if (tipo === 'notificacion') {
+                agregarNotificacion(data);
+            } else {
+                window.addActivityEntry?.(tipo, JSON.stringify(data), tipo);
+            }
         } catch (e) {
             console.error('WS parse error', e);
         }
@@ -79,7 +196,11 @@ async function actualizarEstado() {
         hayGrabacion = data.tiene_grabacion;
 
         if (data.interrumpido) {
-            mostrarNotificacion("Reproducción interrumpida", "Se detuvo la reproducción por intervención del usuario.");
+            agregarNotificacion({
+                title: 'Reproducción interrumpida',
+                message: 'Se detuvo la reproducción por intervención del usuario.',
+                type: 'warning'
+            });
         }
 
         // Actualizar métricas en la UI si los elementos existen
@@ -236,6 +357,9 @@ function conectarControles() {
 }
 
 async function init() {
+    loadNotifications();
+    actualizarBadge();
+    actualizarMuro();
     conectarControles();
     actualizarUI();
     if (await verificarBackend()) {
@@ -248,3 +372,15 @@ if (document.readyState === "loading") {
 } else {
     init();
 }
+
+window.actualizarBadge = actualizarBadge;
+window.actualizarMuro = actualizarMuro;
+window.eliminarNotificacion = eliminarNotificacion;
+window.clearNotifications = clearNotifications;
+window.marcarTodasLeidas = () => {
+    notifications.forEach(n => n.read = true);
+    unreadNotifications = 0;
+    saveNotifications();
+    actualizarMuro();
+    actualizarBadge();
+};

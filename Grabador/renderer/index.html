@@ -144,6 +144,110 @@
             animation: pulse 2s infinite;
         }
 
+        .notification-panel {
+            position: absolute;
+            top: 50px;
+            right: 20px;
+            width: 320px;
+            max-height: 400px;
+            overflow-y: auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 10px;
+            display: none;
+            z-index: 999;
+        }
+
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .notification-clear {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .notification-clear:hover {
+            color: var(--primary-red-light);
+        }
+
+        .notification-filters {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 8px;
+        }
+
+        .notification-filters input[type="text"] {
+            flex: 1;
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .notification-filters select {
+            background: var(--bg-panel);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            padding: 3px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .notification-panel.visible {
+            display: block;
+        }
+
+        .notification-item {
+            padding: 8px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .notification-item.unread {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .notification-item.info { border-left: 3px solid #3498db; }
+        .notification-item.success { border-left: 3px solid #2ecc71; }
+        .notification-item.error { border-left: 3px solid #e74c3c; }
+        .notification-item.warning { border-left: 3px solid #f1c40f; }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        .notification-time {
+            display: block;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .notification-dismiss {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .notification-dismiss:hover {
+            color: var(--primary-red-light);
+        }
+
         /* Layout principal */
         .main-layout {
             display: flex;
@@ -1206,6 +1310,28 @@ html, body {
                 </button>
             </div>
         </div>
+        <div id="notification-panel" class="notification-panel">
+            <div class="notification-header">
+                <strong>Notificaciones</strong>
+                <button class="notification-clear" onclick="clearNotifications()">Limpiar</button>
+            </div>
+            <div class="notification-filters">
+                <select id="filter-type" onchange="filtrar(this.value, document.getElementById('filter-read').value)">
+                    <option value="">Todos</option>
+                    <option value="info">Info</option>
+                    <option value="success">Éxito</option>
+                    <option value="warning">Advertencia</option>
+                    <option value="error">Error</option>
+                </select>
+                <select id="filter-read" onchange="filtrar(document.getElementById('filter-type').value, this.value)">
+                    <option value="">Todas</option>
+                    <option value="unread">No leídas</option>
+                    <option value="read">Leídas</option>
+                </select>
+                <input type="text" id="search-notifications" placeholder="Buscar..." oninput="buscar(this.value)">
+            </div>
+            <div id="notification-list"></div>
+        </div>
 
         <div class="main-layout">
             <!-- Sidebar -->
@@ -1807,7 +1933,12 @@ html, body {
         }
 
         function showNotifications() {
-            console.log('Mostrando notificaciones...');
+            const panel = document.getElementById('notification-panel');
+            if (!panel) return;
+            panel.classList.toggle('visible');
+            if (panel.classList.contains('visible')) {
+                if (window.marcarTodasLeidas) window.marcarTodasLeidas();
+            }
         }
 
         function showSettings() {
@@ -1884,10 +2015,8 @@ html, body {
 
         // Animación de la barra de notificación
         const badge = document.querySelector('.notification-badge');
-        if (badge) {
-            setInterval(() => {
-                badge.style.display = Math.random() > 0.7 ? 'block' : 'none';
-            }, 10000);
+        if (badge && window.actualizarBadge) {
+            window.actualizarBadge();
         }
     
         function handleContentScrollState() {
@@ -1968,6 +2097,7 @@ html, body {
         document.addEventListener('DOMContentLoaded', () => {
             handleContentScrollState();
             handleSidebarScrollState();
+            if (window.actualizarBadge) window.actualizarBadge();
         });
     </script>
 <script src="renderer.js"></script>

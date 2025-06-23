@@ -160,6 +160,25 @@
             z-index: 999;
         }
 
+        .notification-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .notification-clear {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .notification-clear:hover {
+            color: var(--primary-red-light);
+        }
+
         .notification-wall.visible {
             display: block;
         }
@@ -167,6 +186,9 @@
         .notification-item {
             padding: 8px;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
         }
 
         .notification-item:last-child {
@@ -177,6 +199,19 @@
             display: block;
             font-size: 11px;
             color: var(--text-muted);
+        }
+
+        .notification-dismiss {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+        }
+
+        .notification-dismiss:hover {
+            color: var(--primary-red-light);
         }
 
         /* Layout principal */
@@ -1241,7 +1276,13 @@ html, body {
                 </button>
             </div>
         </div>
-        <div id="notification-wall" class="notification-wall"></div>
+        <div id="notification-wall" class="notification-wall">
+            <div class="notification-header">
+                <strong>Notificaciones</strong>
+                <button class="notification-clear" onclick="clearNotifications()">Limpiar</button>
+            </div>
+            <div id="notification-list"></div>
+        </div>
 
         <div class="main-layout">
             <!-- Sidebar -->
@@ -1849,6 +1890,7 @@ html, body {
             if (wall.classList.contains('visible')) {
                 unreadNotifications = 0;
                 if (window.actualizarBadge) window.actualizarBadge();
+                if (window.actualizarMuro) window.actualizarMuro();
             }
         }
 

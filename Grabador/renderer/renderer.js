@@ -23,12 +23,35 @@ const notifications = [];
 let unreadNotifications = 0;
 
 function actualizarMuro() {
-    const wall = document.getElementById('notification-wall');
-    if (!wall) return;
-    wall.innerHTML = notifications.map(n => {
+    const list = document.getElementById('notification-list');
+    if (!list) return;
+    list.innerHTML = notifications.map((n, idx) => {
         const time = n.time.toTimeString().split(' ')[0];
-        return `\n            <div class="notification-item">\n                <strong>${n.titulo}</strong>\n                <span class="notification-time">${time}</span>\n                <div>${n.cuerpo}</div>\n            </div>`;
+        return `
+            <div class="notification-item">
+                <div class="item-content">
+                    <strong>${n.titulo}</strong>
+                    <span class="notification-time">${time}</span>
+                    <div>${n.cuerpo}</div>
+                </div>
+                <button class="notification-dismiss" onclick="removeNotification(${idx})">&times;</button>
+            </div>`;
     }).join('');
+}
+
+function removeNotification(index) {
+    if (index >= 0 && index < notifications.length) {
+        notifications.splice(index, 1);
+        actualizarMuro();
+        actualizarBadge();
+    }
+}
+
+function clearNotifications() {
+    notifications.length = 0;
+    unreadNotifications = 0;
+    actualizarMuro();
+    actualizarBadge();
 }
 
 function actualizarBadge() {
@@ -274,3 +297,6 @@ if (document.readyState === "loading") {
 }
 
 window.actualizarBadge = actualizarBadge;
+window.actualizarMuro = actualizarMuro;
+window.removeNotification = removeNotification;
+window.clearNotifications = clearNotifications;

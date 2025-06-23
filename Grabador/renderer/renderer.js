@@ -26,13 +26,14 @@ let filterState = '';
 let searchText = '';
 
 let audioCtx;
-async function playTone(freq = 440, duration = 150, volume = 0.2) {
+function playTone(freq = 440, duration = 150, volume = 0.2) {
     try {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
         if (audioCtx.state === 'suspended') {
-            await audioCtx.resume();
+            // Resume without awaiting to keep synchronous user gesture
+            audioCtx.resume().catch(e => console.error('AudioContext resume error', e));
         }
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();

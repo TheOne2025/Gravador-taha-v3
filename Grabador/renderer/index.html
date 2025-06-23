@@ -156,7 +156,10 @@
             border-radius: 8px;
             box-shadow: var(--shadow);
             padding: 10px;
-            display: none;
+            opacity: 0;
+            transform: translateY(-10px);
+            pointer-events: none;
+            transition: opacity 0.25s, transform 0.25s;
             z-index: 999;
         }
 
@@ -205,28 +208,44 @@
         }
 
         .notification-panel.visible {
-            display: block;
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
         .notification-item {
             padding: 8px;
             border-bottom: 1px solid var(--border-color);
             display: flex;
-            justify-content: space-between;
-            gap: 10px;
+            align-items: flex-start;
+            gap: 8px;
+            transition: background 0.2s;
+        }
+
+        .notification-item:hover {
+            background: var(--bg-hover);
         }
 
         .notification-item.unread {
             background: rgba(255, 255, 255, 0.05);
         }
 
-        .notification-item.info { border-left: 3px solid #3498db; }
-        .notification-item.success { border-left: 3px solid #2ecc71; }
-        .notification-item.error { border-left: 3px solid #e74c3c; }
-        .notification-item.warning { border-left: 3px solid #f1c40f; }
+        .notification-item.info { border-left: 3px solid var(--info); }
+        .notification-item.success { border-left: 3px solid var(--success); }
+        .notification-item.error { border-left: 3px solid var(--primary-red); }
+        .notification-item.warning { border-left: 3px solid var(--warning); }
 
         .notification-item:last-child {
             border-bottom: none;
+        }
+
+        .notification-item .icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            font-size: 16px;
+            line-height: 1;
+            margin-top: 2px;
         }
 
         .notification-time {
@@ -246,6 +265,17 @@
 
         .notification-dismiss:hover {
             color: var(--primary-red-light);
+        }
+
+        .notification-item .item-content {
+            flex: 1;
+            cursor: pointer;
+        }
+
+        .notification-empty {
+            text-align: center;
+            padding: 15px;
+            color: var(--text-muted);
         }
 
         /* Layout principal */

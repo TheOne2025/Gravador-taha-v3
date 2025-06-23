@@ -64,11 +64,20 @@ function actualizarMuro() {
         return true;
     });
 
+    if (filtradas.length === 0) {
+        list.innerHTML = '<div class="notification-empty">Sin notificaciones</div>';
+        return;
+    }
+
+    const icons = { info: 'ℹ️', success: '✔️', error: '❌', warning: '⚠️' };
+
     list.innerHTML = filtradas.map(n => {
         const time = n.time.toTimeString().split(' ')[0];
         const unreadClass = n.read ? '' : 'unread';
+        const icon = icons[n.type] || 'ℹ️';
         return `
             <div class="notification-item ${n.type} ${unreadClass}">
+                <div class="icon">${icon}</div>
                 <div class="item-content" onclick="marcarComoLeida('${n.id}')">
                     <strong>${n.title}</strong>
                     <span class="notification-time">${time}</span>

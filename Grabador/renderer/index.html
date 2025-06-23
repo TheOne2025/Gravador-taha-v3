@@ -151,6 +151,7 @@
             width: 320px;
             max-height: 400px;
             overflow-y: auto;
+            overflow-x: hidden; /* evita scroll horizontal */
             background: var(--bg-card);
             border: 1px solid var(--border-color);
             border-radius: 8px;
@@ -276,6 +277,14 @@
             text-align: center;
             padding: 15px;
             color: var(--text-muted);
+        }
+
+        .notification-date {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text-secondary);
+            margin: 6px 0 2px;
+            padding-top: 4px;
         }
 
         /* Layout principal */
@@ -1962,12 +1971,23 @@ html, body {
             }
         }
 
+        let hideNotifHandler;
         function showNotifications() {
             const panel = document.getElementById('notification-panel');
             if (!panel) return;
-            panel.classList.toggle('visible');
-            if (panel.classList.contains('visible')) {
+            const visible = panel.classList.toggle('visible');
+            if (visible) {
                 if (window.marcarTodasLeidas) window.marcarTodasLeidas();
+                hideNotifHandler = (e) => {
+                    const btn = document.querySelector('[data-tooltip="Notificaciones"]');
+                    if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                        panel.classList.remove('visible');
+                        document.removeEventListener('click', hideNotifHandler);
+                    }
+                };
+                document.addEventListener('click', hideNotifHandler);
+            } else {
+                document.removeEventListener('click', hideNotifHandler);
             }
         }
 
@@ -2038,8 +2058,13 @@ html, body {
                 e.preventDefault();
                 window.pauseRecording();
             } else if (e.key === "Escape") {
-                e.preventDefault();
-                window.stopRecording();
+                const panel = document.getElementById('notification-panel');
+                if (panel && panel.classList.contains('visible')) {
+                    panel.classList.remove('visible');
+                } else {
+                    e.preventDefault();
+                    window.stopRecording();
+                }
             }
         });
 

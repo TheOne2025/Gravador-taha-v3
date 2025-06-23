@@ -25,6 +25,10 @@ let filterType = '';
 let filterState = '';
 let searchText = '';
 
+function formatDate(date) {
+    return date.toLocaleDateString();
+}
+
 function loadNotifications() {
     try {
         const stored = localStorage.getItem('notifications');
@@ -56,13 +60,15 @@ function actualizarMuro() {
     const list = document.getElementById('notification-list');
     if (!list) return;
 
-    const filtradas = notifications.filter(n => {
-        if (filterType && n.type !== filterType) return false;
-        if (filterState === 'read' && !n.read) return false;
-        if (filterState === 'unread' && n.read) return false;
-        if (searchText && !n.title.toLowerCase().includes(searchText) && !n.message.toLowerCase().includes(searchText)) return false;
-        return true;
-    });
+    const filtradas = notifications
+        .filter(n => {
+            if (filterType && n.type !== filterType) return false;
+            if (filterState === 'read' && !n.read) return false;
+            if (filterState === 'unread' && n.read) return false;
+            if (searchText && !n.title.toLowerCase().includes(searchText) && !n.message.toLowerCase().includes(searchText)) return false;
+            return true;
+        })
+        .sort((a, b) => b.time - a.time);
 
     if (filtradas.length === 0) {
         list.innerHTML = '<div class="notification-empty">Sin notificaciones</div>';
@@ -71,11 +77,18 @@ function actualizarMuro() {
 
     const icons = { info: 'ℹ️', success: '✔️', error: '❌', warning: '⚠️' };
 
-    list.innerHTML = filtradas.map(n => {
+    let html = '';
+    let currentDate = '';
+    filtradas.forEach(n => {
+        const dateStr = formatDate(n.time);
+        if (dateStr !== currentDate) {
+            currentDate = dateStr;
+            html += `<div class="notification-date">${dateStr}</div>`;
+        }
         const time = n.time.toTimeString().split(' ')[0];
         const unreadClass = n.read ? '' : 'unread';
         const icon = icons[n.type] || 'ℹ️';
-        return `
+        html += `
             <div class="notification-item ${n.type} ${unreadClass}">
                 <div class="icon">${icon}</div>
                 <div class="item-content" onclick="marcarComoLeida('${n.id}')">
@@ -85,7 +98,9 @@ function actualizarMuro() {
                 </div>
                 <button class="notification-dismiss" onclick="eliminarNotificacion('${n.id}')">&times;</button>
             </div>`;
-    }).join('');
+    });
+
+    list.innerHTML = html;
 }
 
 function eliminarNotificacion(id) {

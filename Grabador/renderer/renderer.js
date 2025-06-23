@@ -25,6 +25,26 @@ let filterType = '';
 let filterState = '';
 let searchText = '';
 
+let audioCtx;
+function playTone(freq = 440, duration = 150, volume = 0.2) {
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        gain.gain.value = volume;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        setTimeout(() => osc.stop(), duration);
+    } catch (e) {
+        console.error('AudioContext error', e);
+    }
+}
+
+function playRecordSound() { playTone(880, 200, 0.25); }
+function playPlaySound() { playTone(660, 180, 0.25); }
+
 function formatDate(date) {
     return date.toLocaleDateString();
 }
@@ -329,6 +349,7 @@ window.toggleRecording = () => {
     bloquearTemporalmente();
 
     if (estado === "idle") {
+        playRecordSound();
         estado = "recording";
         startBackendRecording();
     } else if (estado === "recording" || estado === "paused") {
@@ -367,6 +388,7 @@ window.startPlayback = () => {
     if (bloqueado || estado !== "idle" || !hayGrabacion) return;
     bloquearTemporalmente();
 
+    playPlaySound();
     estado = "playing";
     playbackRecording();
     actualizarUI();

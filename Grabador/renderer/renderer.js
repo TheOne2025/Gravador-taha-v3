@@ -26,9 +26,14 @@ let filterState = '';
 let searchText = '';
 
 let audioCtx;
-function playTone(freq = 440, duration = 150, volume = 0.2) {
+async function playTone(freq = 440, duration = 150, volume = 0.2) {
     try {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+        }
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.frequency.value = freq;
